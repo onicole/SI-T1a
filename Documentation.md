@@ -1,4 +1,4 @@
-#Document d'installation
+﻿#Document d'installation
 
 ========================================================================================================================
 Installation, configuration et premiers pas avec nginx et php-fpm :
@@ -189,3 +189,102 @@ fastcgi_pass unix:/var/run/php5-fpm-mysite.sock;
 8. Modifier le nombre de worker_process dans le fichier /etc/nginx/nginx.conf
 
 Et voilà.
+
+
+===========================================================================================================================================
+#Installation d'un serveur SVN sur CentOS 6
+
+Subversion (SVN) est un logiciel de gestion de versions basé sur le pincipe du depôt centralisé et unique. Notre machine virtuelle servira de dépot central et contiendra toutes les versions de tous les fichiers utilisés.
+
+##Configuration du firewall:
+
+Par défaut le firewall de CentOS 6 bloque quasiment tous les ports. Pour que le serveur puisse répondre aux requêtes SVN il faut d'abord ajouter des règles dans le firewall.
+
+ajouter
+
+    -A INPUT -p tcp -m state --state NEW -m tcp --dport 3690 -j ACCEPT
+dans
+
+    /etc/sysconfig/iptables
+
+Puis redémarrer le firewall pour qu'il recharge les règles.
+
+    service iptables restart
+
+
+
+##Installation de subversion
+
+Rien de plus simple, il suffit de l'installer à partir de Yum :
+
+    yum install svn
+
+SVN est désormais installé. Il faut donc maintenant le configurer.
+
+##Démarrage automatique de svnserve
+
+`svnserve` est le daemon en charge de répondre aux requêtes SVN. En l'état actuel des choses il faut le relancer à chaque démarrage. Pour que cela se fasse automatiquement il faut ajouter la ligne
+
+    service svnserve start
+
+dans
+
+    /etc/rc.local
+
+Pour s'assurer que le service tourne, on utilise la commande
+
+    service svnserve status
+
+qui devrait retourner
+
+    svnserve (pid XXXX) is running...
+
+##Créer un repository
+
+L'étape suivante consiste à créer un repository afin de tester le bon fonctionnement de SVN. Ce répertoire devrait être situé à la racine du système afin d'être plus facile d'accès.
+
+Créez un dossier `/svn/` (par exemple) à la racine puis déplacez-vous dedans.
+
+Pour créer un repository on utilise la commande 
+
+    svnadmin create repo
+
+Ou repo est le nom de votre repository. Cette commande créé toute l'arborescence et les fichiers dont SVN à besoin pour fonctionner.
+
+##Configurer le repo
+
+Le repo créé, il reste encore à le configurer afin de ne pas laisser des utilisateurs non authentifiés y accéder par exemple.
+
+Déplacez-vous dans le dossier `conf` du repo
+
+Editez le fichier `svnserve.conf`, décommentez les lignes nécessaires (les commentaires sont très utile pour vous indiquer le rôles des différents paramètres).
+
+La ligne suivante permet de gérer les droits pour les utilisateurs anonymes
+
+    anon-access = read|write|none
+
+
+Pour plus de détails, consultez la commande `man svnserve.conf`
+
+##Configurer le fichier utilisateur
+
+Il est aussi possible de créer et de définir des droits pour des utilisateurs précis. Pour se faire il suffit d'éditer le fichier `passwd` situé dans le même dossier `conf`.
+
+dans la section [users], ajoutez un utilisateur et son mot de passe par ligne.
+
+    admin = password
+
+Par exemple.
+
+Le fichier `authz` contient d'autres informations pour les utilisateurs. Il permet de configurer des groupes, renseigner les utilisateurs (nom, prénom, etc) ainsi que les droits spécifiques sur les différents projets du repo.
+
+##Tester le fonctionnement
+
+En ligne de commande:
+
+    svn list svn://ip.ou.nom.du.serveur/svn/nomrepo
+
+Ou à l'aide d'un GUI avec TortoiseSVN sous Windows.
+
+Vous devriez pouvoir voir la liste des fichiers du repo ou rien si le repo est vide. Mais en tout cas pas d'erreurs ou de timeout.
+
