@@ -119,7 +119,7 @@ Configuration de base et test de nginx et php-fpm : création d'un site de test 
 		}
 	
 
-14. Relier votre hôte virtuel aux sites actif et redémarrez nginx
+14. Relier votre hôte virtuel aux sites actifs et redémarrez nginx
 
 	cd /etc/nginx/sites-enabled/
 	ln -s /etc/nginx/sites-available/testsite.local
